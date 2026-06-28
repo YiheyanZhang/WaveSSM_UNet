@@ -204,17 +204,22 @@ python main.py --mode train --train_ratio 0.25 --split_seed 42 ...
 
 ## Datasets
 
-### Synthetic Training & Validation Data
+### Download
 
-Synthetic 3D seismic volumes with corresponding fault labels, used for supervised training and quantitative evaluation.
+All datasets (training, validation, and real seismic prediction data) are provided via Baidu Wangpan:
 
-| Dataset | Samples | Link |
-|---------|---------|------|
-| Training + Validation (200 samples) | 200 | [Baidu Wangpan](https://pan.baidu.com/s/10o848E2vMmjmi21xZBFRiw?pwd=i4mo) — Code: `i4mo` |
-| Training + Validation (800 samples, augmented) | 800 | [Baidu Wangpan](https://pan.baidu.com/s/1PzsmRt9drnZI9J5GFOk9rw?pwd=zwqf) — Code: `zwqf` |
-| Prediction — F3 dataset | F3 block | [Baidu Wangpan](https://pan.baidu.com/s/1iBnW94Yn2U0GQQF3-3pXOA?pwd=0b2j) — Code: `0b2j` |
+| Contents | Samples | Directory |
+|----------|---------|-----------|
+| Training set | ~200 | `train/` |
+| Validation set | ~20 | `validation/` |
+| F3 real seismic data | — | `prediction/f3/` |
+| Kerry3D real seismic data | — | `prediction/kerry3d/` |
 
-### Real Seismic Datasets
+> **Download link**: [Baidu Wangpan](https://pan.baidu.com/s/15m7RWQxu86C6Ej3-9RSUoQ) — Extraction code: `ju47`
+>
+> 220 samples total (train + validation). F3 and Kerry3D prediction data are in the `prediction/` subdirectory.
+
+### Real Seismic Datasets (Original Sources)
 
 | Dataset | Source | Description |
 |---------|--------|-------------|
