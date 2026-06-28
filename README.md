@@ -54,6 +54,11 @@ WaveSSM-UNet adopts a U-shaped encoder–decoder backbone decomposed into three 
 - **FDEM** — Laplacian-guided local contrast enhancement for fine fault detail preservation
 - **SFAM** — Variance-aware channel + spatial attention for fault-sensitive feature re-calibration
 
+<p align="center">
+  <img src="docs/overview.png" alt="WaveSSM-UNet Architecture Overview" width="100%">
+  <br><em>Figure 1: Overview of the WaveSSM-UNet model architecture.</em>
+</p>
+
 ---
 
 ## Key Contributions
@@ -247,6 +252,12 @@ Our model achieves state-of-the-art performance across all metrics with only **3
 | SwinUNETR | ~66 M | 0.8438 | 0.9094 | 0.8313 | 0.9878 | 0.8957 |
 | **WaveSSM-UNet (Ours)** | **3.33 M** | **0.8607** | **0.9203** | **0.8517** | **0.9924** | **0.9107** |
 
+<p align="center">
+  <img src="docs/PR_comparison.png" alt="PR Curves" width="45%">
+  <img src="docs/ROC_comparison.png" alt="ROC Curves" width="45%">
+  <br><em>PR and ROC curves on the full synthetic validation set (200 training samples).</em>
+</p>
+
 ### Data Efficiency (Synthetic Dataset — 50 Samples)
 
 When trained on only 50 synthetic volumes (25% of the full training set), WaveSSM-UNet retains robust performance while the Transformer baseline degrades severely:
@@ -258,15 +269,29 @@ When trained on only 50 synthetic volumes (25% of the full training set), WaveSS
 
 The wavelet-domain physical priors enable the model to extract deep fault-related features from extremely limited data, avoiding the overfitting that plagues the highly complex Transformer architecture.
 
-### Cross-Domain Generalization
+### Visual Comparison — Synthetic Data
 
-Models trained exclusively on synthetic data are directly applied to real seismic volumes (F3, Kerry3D) without fine-tuning. WaveSSM-UNet demonstrates:
-- **Superior fault continuity** — fewer fractures and discontinuities in predicted fault planes
-- **Sharper fault boundaries** — boundary-aware loss yields visually crisper delineation
-- **Higher detection recall** — fewer missed detections on minor fault structures
-- **Cleaner predictions** — reduced false positives in complex geological backgrounds
+<p align="center">
+  <em>2D slice at Depth = 50. From left to right: seismic data, ground truth, FaultSeg3D, ResUNet, SwinUNETR, and WaveSSM-UNet (Ours).</em>
+</p>
 
-*Visual comparisons: see Figures 14–22 in the paper.*
+| Seismic | Ground Truth | FaultSeg3D | ResUNet | SwinUNETR | **Ours** |
+|---------|-------------|------------|---------|-----------|----------|
+| <img src="docs/sample10_depth50_seis.png" width="100%"> | <img src="docs/sample10_depth50_gt.png" width="100%"> | <img src="docs/sample10_depth50_faultseg.png" width="100%"> | <img src="docs/sample10_depth50_resunet.png" width="100%"> | <img src="docs/sample10_depth50_swinunetr.png" width="100%"> | <img src="docs/sample10_depth50_ours.png" width="100%"> |
+
+### Cross-Domain Generalization — F3 Dataset (Netherlands North Sea)
+
+Models trained exclusively on synthetic data, directly applied to the F3 real seismic volume without fine-tuning:
+
+| Seismic Data | FaultSeg3D | SwinUNETR | **Ours** |
+|-------------|------------|-----------|----------|
+| <img src="docs/f3_3d_seis.png" width="100%"> | <img src="docs/f3_3d_faultseg.png" width="100%"> | <img src="docs/f3_3d_swinunetr.png" width="100%"> | <img src="docs/f3_3d_ours.png" width="100%"> |
+
+### Cross-Domain Generalization — Kerry3D Dataset (Taranaki Basin, New Zealand)
+
+| Seismic Data | FaultSeg3D | SwinUNETR | **Ours** |
+|-------------|------------|-----------|----------|
+| <img src="docs/kerry_3d_seis.png" width="100%"> | <img src="docs/kerry_3d_faultseg.png" width="100%"> | <img src="docs/kerry_3d_swinunetr.png" width="100%"> | <img src="docs/kerry_3d_ours.png" width="100%"> |
 
 ### Ablation Study
 
@@ -278,6 +303,14 @@ Ablation experiments confirm the contribution of each component:
 | w/o FaultOrientedMamba | Reduced fault continuity, fragmented predictions |
 | w/o MambaSkip | Loss of fine structural detail in decoder |
 | w/o Boundary Loss | Blurred fault edges, reduced boundary sharpness |
+
+<p align="center">
+  <em>Ablation study on the F3 dataset. Removing any component degrades prediction quality. Full model (rightmost) achieves the best continuity and boundary sharpness.</em>
+</p>
+
+| w/o Wavelet | w/o FaultOrientedMamba | w/o MambaSkip | w/o Boundary Loss | **Full Model** |
+|-------------|------------------------|---------------|-------------------|----------------|
+| <img src="docs/abulation_f3_nowavelet.png" width="100%"> | <img src="docs/abulation_f3_nofaultorientedmamba.png" width="100%"> | <img src="docs/abulation_f3_nomambaskip.png" width="100%"> | <img src="docs/abulation_f3_noboundaryloss.png" width="100%"> | <img src="docs/abulation_f3_full.png" width="100%"> |
 
 *Full ablation study: see Figures 23–24 in the paper.*
 
