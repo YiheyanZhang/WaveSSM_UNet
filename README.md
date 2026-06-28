@@ -349,10 +349,10 @@ WaveSSM/
 If you use WaveSSM in your research, please cite our work:
 
 ```bibtex
-@article{waveSSM2026,
+@article{zhang2026wavessm,
   title   = {An Enhanced Mamba-UNet with Wavelet-Domain Multi-scale Physical
              Priors for Seismic Fault Detection},
-  author  = {},
+  author  = {Yiheyan Zhang and Yajun Tian and Jinghuai Gao},
   journal = {Geophysics},
   year    = {2026},
   note    = {Under review}
