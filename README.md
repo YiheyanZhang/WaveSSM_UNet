@@ -236,22 +236,27 @@ All datasets should be preprocessed before training:
 
 ## Experimental Results
 
-### Quantitative Evaluation (Synthetic Dataset)
+### Quantitative Evaluation (Synthetic Dataset — Full Training Set, 200 Samples)
 
-Our model achieves state-of-the-art performance across all metrics while maintaining a compact parameter footprint:
+Our model achieves state-of-the-art performance across all metrics with only **3.33 M** parameters:
 
-| Model | Params | mIoU | Dice | F1 |
-|-------|--------|------|------|-----|
-| **WaveSSM-UNet (Ours)** | **3.33 M** | **Best** | **Best** | **Best** |
-| SwinUNETR | ~66 M | Comparable | Comparable | Comparable |
-| FaultSeg3D | — | Baseline | Baseline | Baseline |
-| ResUNet | — | Baseline | Baseline | Baseline |
+| Model | Params | mIoU ↑ | Dice ↑ | F1 ↑ | ROC-AUC ↑ | PR-AUC ↑ |
+|-------|--------|--------|--------|------|-----------|----------|
+| FaultSeg3D | — | 0.7775 | 0.8624 | 0.7462 | 0.9773 | 0.7877 |
+| ResUNet | — | 0.7988 | 0.8796 | 0.7805 | 0.9727 | 0.8395 |
+| SwinUNETR | ~66 M | 0.8438 | 0.9094 | 0.8313 | 0.9878 | 0.8957 |
+| **WaveSSM-UNet (Ours)** | **3.33 M** | **0.8607** | **0.9203** | **0.8517** | **0.9924** | **0.9107** |
 
-*Full quantitative results: see Table 1 in the paper.*
+### Data Efficiency (Synthetic Dataset — 50 Samples)
 
-### Data Efficiency
+When trained on only 50 synthetic volumes (25% of the full training set), WaveSSM-UNet retains robust performance while the Transformer baseline degrades severely:
 
-When trained on only 50 synthetic volumes (25% of the full training set), WaveSSM-UNet retains high performance thanks to wavelet physical priors, whereas Transformer-based baselines suffer severe degradation from overfitting. *See Table 2 in the paper for detailed metrics.*
+| Model | mIoU ↑ | Dice ↑ | F1 ↑ | ROC-AUC ↑ | PR-AUC ↑ |
+|-------|--------|--------|------|-----------|----------|
+| SwinUNETR | 0.7255 | 0.8219 | 0.6821 | 0.9561 | 0.7208 |
+| **WaveSSM-UNet (Ours)** | **0.8148** | **0.8893** | **0.7945** | **0.9757** | **0.8458** |
+
+The wavelet-domain physical priors enable the model to extract deep fault-related features from extremely limited data, avoiding the overfitting that plagues the highly complex Transformer architecture.
 
 ### Cross-Domain Generalization
 
