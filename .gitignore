@@ -1,0 +1,65 @@
+# ========================
+# Data & Experiments
+# ========================
+data/
+EXP/
+*.pth
+*.pt
+*.ckpt
+*.h5
+*.hdf5
+
+# ========================
+# Bytecode / Cache
+# ========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ========================
+# IDE & Editor
+# ========================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ========================
+# External / Submodules
+# ========================
+osv/
+
+# ========================
+# Jupyter / Notebooks
+# ========================
+.ipynb_checkpoints/
+*.ipynb
+
+# ========================
+# Virtual Environment
+# ========================
+venv/
+.venv/
+env/
+.env
+*.env
+
+# ========================
+# Logs
+# ========================
+*.log
+logs/
+
+# ========================
+# Miscellaneous
+# ========================
+*.tmp
+*.temp
