@@ -277,7 +277,7 @@ The wavelet-domain physical priors enable the model to extract deep fault-relate
 
 | Seismic | Ground Truth | FaultSeg3D | ResUNet | SwinUNETR | **Ours** |
 |---------|-------------|------------|---------|-----------|----------|
-| <img src="docs/sample10_depth50_seis.png" height="160"> | <img src="docs/sample10_depth50_gt.png" height="160"> | <img src="docs/sample10_depth50_faultseg.png" height="160"> | <img src="docs/sample10_depth50_resunet.png" height="160"> | <img src="docs/sample10_depth50_swinunetr.png" height="160"> | <img src="docs/sample10_depth50_ours.png" height="160"> |
+| <img src="docs/sample10_depth50_seis.png" width="160" height="160"> | <img src="docs/sample10_depth50_gt.png" width="160" height="160"> | <img src="docs/sample10_depth50_faultseg.png" width="160" height="160"> | <img src="docs/sample10_depth50_resunet.png" width="160" height="160"> | <img src="docs/sample10_depth50_swinunetr.png" width="160" height="160"> | <img src="docs/sample10_depth50_ours.png" width="160" height="160"> |
 
 ### Cross-Domain Generalization — F3 Dataset (Netherlands North Sea)
 
@@ -285,13 +285,13 @@ Models trained exclusively on synthetic data, directly applied to the F3 real se
 
 | Seismic Data | FaultSeg3D | SwinUNETR | **Ours** |
 |-------------|------------|-----------|----------|
-| <img src="docs/f3_3d_seis.png" height="160"> | <img src="docs/f3_3d_faultseg.png" height="160"> | <img src="docs/f3_3d_swinunetr.png" height="160"> | <img src="docs/f3_3d_ours.png" height="160"> |
+| <img src="docs/f3_3d_seis.png" width="196" height="160"> | <img src="docs/f3_3d_faultseg.png" width="196" height="160"> | <img src="docs/f3_3d_swinunetr.png" width="196" height="160"> | <img src="docs/f3_3d_ours.png" width="196" height="160"> |
 
 ### Cross-Domain Generalization — Kerry3D Dataset (Taranaki Basin, New Zealand)
 
 | Seismic Data | FaultSeg3D | SwinUNETR | **Ours** |
 |-------------|------------|-----------|----------|
-| <img src="docs/kerry_3d_seis.png" height="160"> | <img src="docs/kerry_3d_faultseg.png" height="160"> | <img src="docs/kerry_3d_swinunetr.png" height="160"> | <img src="docs/kerry_3d_ours.png" height="160"> |
+| <img src="docs/kerry_3d_seis.png" width="216" height="160"> | <img src="docs/kerry_3d_faultseg.png" width="216" height="160"> | <img src="docs/kerry_3d_swinunetr.png" width="216" height="160"> | <img src="docs/kerry_3d_ours.png" width="216" height="160"> |
 
 ### Ablation Study
 
@@ -310,7 +310,7 @@ Ablation experiments confirm the contribution of each component:
 
 | w/o Wavelet | w/o FaultOrientedMamba | w/o MambaSkip | w/o Boundary Loss | **Full Model** |
 |-------------|------------------------|---------------|-------------------|----------------|
-| <img src="docs/abulation_f3_nowavelet.png" height="160"> | <img src="docs/abulation_f3_nofaultorientedmamba.png" height="160"> | <img src="docs/abulation_f3_nomambaskip.png" height="160"> | <img src="docs/abulation_f3_noboundaryloss.png" height="160"> | <img src="docs/abulation_f3_full.png" height="160"> |
+| <img src="docs/abulation_f3_nowavelet.png" width="210" height="160"> | <img src="docs/abulation_f3_nofaultorientedmamba.png" width="210" height="160"> | <img src="docs/abulation_f3_nomambaskip.png" width="210" height="160"> | <img src="docs/abulation_f3_noboundaryloss.png" width="210" height="160"> | <img src="docs/abulation_f3_full.png" width="210" height="160"> |
 
 *Full ablation study: see Figures 23–24 in the paper.*
 
