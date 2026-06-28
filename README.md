@@ -272,26 +272,25 @@ The wavelet-domain physical priors enable the model to extract deep fault-relate
 ### Visual Comparison — Synthetic Data
 
 <p align="center">
-  <em>2D slice at Depth = 50. From left to right: seismic data, ground truth, FaultSeg3D, ResUNet, SwinUNETR, and WaveSSM-UNet (Ours).</em>
+  <em>2D slice at Depth = 50. Comparison of all models on synthetic data.</em><br>
+  <img src="docs/synthetic_comparison.png" alt="Synthetic Data Comparison" width="100%">
 </p>
-
-| Seismic | Ground Truth | FaultSeg3D | ResUNet | SwinUNETR | **Ours** |
-|---------|-------------|------------|---------|-----------|----------|
-| <img src="docs/sample10_depth50_seis.png" width="160" height="160"> | <img src="docs/sample10_depth50_gt.png" width="160" height="160"> | <img src="docs/sample10_depth50_faultseg.png" width="160" height="160"> | <img src="docs/sample10_depth50_resunet.png" width="160" height="160"> | <img src="docs/sample10_depth50_swinunetr.png" width="160" height="160"> | <img src="docs/sample10_depth50_ours.png" width="160" height="160"> |
 
 ### Cross-Domain Generalization — F3 Dataset (Netherlands North Sea)
 
 Models trained exclusively on synthetic data, directly applied to the F3 real seismic volume without fine-tuning:
 
-| Seismic Data | FaultSeg3D | SwinUNETR | **Ours** |
-|-------------|------------|-----------|----------|
-| <img src="docs/f3_3d_seis.png" width="196" height="160"> | <img src="docs/f3_3d_faultseg.png" width="196" height="160"> | <img src="docs/f3_3d_swinunetr.png" width="196" height="160"> | <img src="docs/f3_3d_ours.png" width="196" height="160"> |
+<p align="center">
+  <em>3D fault prediction results on the F3 dataset (Netherlands North Sea).</em><br>
+  <img src="docs/f3_comparison.png" alt="F3 Dataset Comparison" width="100%">
+</p>
 
 ### Cross-Domain Generalization — Kerry3D Dataset (Taranaki Basin, New Zealand)
 
-| Seismic Data | FaultSeg3D | SwinUNETR | **Ours** |
-|-------------|------------|-----------|----------|
-| <img src="docs/kerry_3d_seis.png" width="216" height="160"> | <img src="docs/kerry_3d_faultseg.png" width="216" height="160"> | <img src="docs/kerry_3d_swinunetr.png" width="216" height="160"> | <img src="docs/kerry_3d_ours.png" width="216" height="160"> |
+<p align="center">
+  <em>3D fault prediction results on the Kerry3D dataset (Taranaki Basin, New Zealand).</em><br>
+  <img src="docs/kerry_comparison.png" alt="Kerry3D Dataset Comparison" width="100%">
+</p>
 
 ### Ablation Study
 
@@ -305,12 +304,9 @@ Ablation experiments confirm the contribution of each component:
 | w/o Boundary Loss | Blurred fault edges, reduced boundary sharpness |
 
 <p align="center">
-  <em>Ablation study on the F3 dataset. Removing any component degrades prediction quality. Full model (rightmost) achieves the best continuity and boundary sharpness.</em>
+  <em>Ablation study on the F3 dataset. Removing any component degrades prediction quality. Full model (rightmost) achieves the best continuity and boundary sharpness.</em><br>
+  <img src="docs/ablation_comparison.png" alt="Ablation Study" width="100%">
 </p>
-
-| w/o Wavelet | w/o FaultOrientedMamba | w/o MambaSkip | w/o Boundary Loss | **Full Model** |
-|-------------|------------------------|---------------|-------------------|----------------|
-| <img src="docs/abulation_f3_nowavelet.png" width="210" height="160"> | <img src="docs/abulation_f3_nofaultorientedmamba.png" width="210" height="160"> | <img src="docs/abulation_f3_nomambaskip.png" width="210" height="160"> | <img src="docs/abulation_f3_noboundaryloss.png" width="210" height="160"> | <img src="docs/abulation_f3_full.png" width="210" height="160"> |
 
 *Full ablation study: see Figures 23–24 in the paper.*
 
