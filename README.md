@@ -148,6 +148,29 @@ python main.py \
 | `--boundary_loss_weight` | `0.0` | Weight for boundary loss term |
 | `--fp16` | `False` | FP16 inference (saves VRAM) |
 
+### Released pretrained checkpoint
+
+The released WaveSSM-UNet checkpoint is included at
+[`checkpoints/WaveSSM_UNet_BEST.pth`](https://github.com/YiheyanZhang/WaveSSM_UNet/blob/main/checkpoints/WaveSSM_UNet_BEST.pth).
+The training code keeps the historical `MSM_UNet_BEST.pth` name for newly
+created experiment directories; the released file uses the WaveSSM-specific
+name to avoid confusion with the baseline models.
+
+To validate or predict with the released checkpoint, place it in the model
+directory of an experiment and pass its filename explicitly:
+
+```bash
+mkdir -p EXP/wavessm_release/models
+cp checkpoints/WaveSSM_UNet_BEST.pth EXP/wavessm_release/models/
+
+python main.py \
+    --mode valid_only \
+    --exp wavessm_release \
+    --model_type msm_unet \
+    --valid_path /path/to/validation/data/ \
+    --pretrained_model_name WaveSSM_UNet_BEST.pth
+```
+
 ### Validation Only
 
 Evaluate a trained model on validation data:
