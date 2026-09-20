@@ -1,6 +1,7 @@
 import os
 import math
 import copy
+import random
 import torch
 from torch.nn import DataParallel
 from tqdm import tqdm
@@ -185,6 +186,12 @@ def plot_pr_roc_curves(y_true, y_pred, save_dir):
 
 
 def train(args):
+    seed = getattr(args, 'seed', 42)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
     # set device
     device = torch.device(args.device)
     print("---")
@@ -197,7 +204,10 @@ def train(args):
     
     # 根据model_type选择模型
     if args.model_type == 'msm_unet':
-        model = MSM_UNet(args.in_channels, args.out_channels).to(device)
+        model = MSM_UNet(
+            args.in_channels, args.out_channels,
+            upsample_mode=getattr(args, 'upsample_mode', 'lossless')
+        ).to(device)
     elif args.model_type == 'FAULTSEG3D':
         # FaultSeg3D 内部已经带 Sigmoid，直接实例化，不走 compare_models/build.py
         model = FaultSeg3D(args.in_channels, args.out_channels).to(device)
@@ -497,7 +507,10 @@ def valid(args, val_loader=None):
     print("---")
     print("Loading Model ... ")
     if args.model_type == 'msm_unet':
-        model = MSM_UNet(args.in_channels, args.out_channels).to(device)
+        model = MSM_UNet(
+            args.in_channels, args.out_channels,
+            upsample_mode=getattr(args, 'upsample_mode', 'lossless')
+        ).to(device)
     elif args.model_type == 'FAULTSEG3D':
         # FaultSeg3D 内部已带 Sigmoid，直接实例化
         model = FaultSeg3D(args.in_channels, args.out_channels).to(device)

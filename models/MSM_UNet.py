@@ -453,6 +453,47 @@ class LosslessUp(nn.Module):
         return x
 
 
+class InterpolationUp(nn.Module):
+    """Trilinear upsampling baseline with the same decoder output shape."""
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.up = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='trilinear', align_corners=False),
+            nn.Conv3d(in_channels, out_channels, kernel_size=1),
+            nn.GroupNorm(out_channels // 4, out_channels),
+            nn.ReLU()
+        )
+        self.feature_mix = nn.Sequential(
+            nn.Conv3d(out_channels, out_channels, kernel_size=3,
+                      padding=1, padding_mode='replicate'),
+            nn.GroupNorm(out_channels // 4, out_channels),
+            nn.ReLU()
+        )
+
+    def forward(self, x):
+        return self.feature_mix(self.up(x))
+
+
+class TransposeUp(nn.Module):
+    """Learned transposed-convolution upsampling baseline."""
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.up = nn.Sequential(
+            nn.ConvTranspose3d(in_channels, out_channels, kernel_size=2, stride=2),
+            nn.GroupNorm(out_channels // 4, out_channels),
+            nn.ReLU()
+        )
+        self.feature_mix = nn.Sequential(
+            nn.Conv3d(out_channels, out_channels, kernel_size=3,
+                      padding=1, padding_mode='replicate'),
+            nn.GroupNorm(out_channels // 4, out_channels),
+            nn.ReLU()
+        )
+
+    def forward(self, x):
+        return self.feature_mix(self.up(x))
+
+
 class MambaSkip(nn.Module):
     """
     轻量级 Mamba 跳跃连接模块
@@ -1192,7 +1233,7 @@ class FDEM(nn.Module):
 
 
 class WaveSSM(nn.Module):
-    def __init__(self, n_channels, n_classes, use_wavelet=True):
+    def __init__(self, n_channels, n_classes, use_wavelet=True, upsample_mode='lossless'):
         """
         MSM-UNet: 多尺度断层分割网络 (断层感知Mamba版本)
 
@@ -1200,6 +1241,7 @@ class WaveSSM(nn.Module):
             n_channels: 输入通道数（原始地震数据通道数，通常为1）
             n_classes: 输出类别数
             use_wavelet: 是否使用小波特征提取（16通道输入）
+            upsample_mode: decoder upsampling implementation
 
         架构：
             - 小波特征提取：5尺度×3属性+原始 = 16通道
@@ -1217,6 +1259,13 @@ class WaveSSM(nn.Module):
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.use_wavelet = use_wavelet
+        upsamplers = {
+            'lossless': LosslessUp,
+            'trilinear': InterpolationUp,
+            'transpose': TransposeUp,
+        }
+        if upsample_mode not in upsamplers:
+            raise ValueError(f'Unknown upsample_mode: {upsample_mode}')
 
         # ==================== 小波特征提取 ====================
         if use_wavelet:
@@ -1263,9 +1312,10 @@ class WaveSSM(nn.Module):
         self.deform_bottleneck = DeformConv3d(128, 128, 3, padding=1)
 
         # 【无损上采样】
-        self.upblock3 = LosslessUp(in_channels=128, out_channels=64)
-        self.upblock2 = LosslessUp(in_channels=64, out_channels=32)
-        self.upblock1 = LosslessUp(in_channels=32, out_channels=16)
+        upsampler = upsamplers[upsample_mode]
+        self.upblock3 = upsampler(in_channels=128, out_channels=64)
+        self.upblock2 = upsampler(in_channels=64, out_channels=32)
+        self.upblock1 = upsampler(in_channels=32, out_channels=16)
 
         # 【Mamba 跳跃连接】- 替换渐进式密集连接
         self.mamba_skip3 = MambaSkip(channels=64, d_state=8)
@@ -1308,11 +1358,13 @@ class WaveSSM(nn.Module):
 
         x2 = self.down1(x1)  # [B, 32, D/2, H/2, W/2]
         x2 = self.enc1(x2)
-        x2 = self.wavelet_fuse1(x2, wavelet_feat)
+        if wavelet_feat is not None:
+            x2 = self.wavelet_fuse1(x2, wavelet_feat)
 
         x3 = self.down2(x2)  # [B, 64, D/4, H/4, W/4]
         x3 = self.enc2(x3)
-        x3 = self.wavelet_fuse2(x3, wavelet_feat)
+        if wavelet_feat is not None:
+            x3 = self.wavelet_fuse2(x3, wavelet_feat)
 
         x4 = self.down3(x3)  # [B, 128, D/8, H/8, W/8]
         x4 = self.enc3(x4)
@@ -1346,6 +1398,9 @@ class WaveSSM(nn.Module):
         main_out = torch.sigmoid(logits)
 
         return main_out, boundary_logits
+
+
+MSM_UNet = WaveSSM
 
 
 if __name__ == '__main__':

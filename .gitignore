@@ -4,15 +4,26 @@
 data/
 EXP/
 *.pth
+!checkpoints/WaveSSM_UNet_BEST.pth
 *.pt
 *.ckpt
 *.h5
 *.hdf5
 
+# Local experiment outputs and backups
+/CIG-BenchFig/
+/WaveSSM_LegacyResult/
+/review_figures/
+/reviewer1_phase1/
+/reviewer1_phase2/
+/reproduction_artifacts/
+
 # ========================
 # Bytecode / Cache
 # ========================
 __pycache__/
+.pytest_cache/
+pytest-cache-files-*/
 *.py[cod]
 *$py.class
 *.so
@@ -36,6 +47,7 @@ Thumbs.db
 # External / Submodules
 # ========================
 osv/
+/third_party/CIG-bench/
 
 # ========================
 # Jupyter / Notebooks
@@ -56,6 +68,23 @@ env/
 # Paper & Manuscript
 # ========================
 *.pdf
+*.tex
+*.bib
+*.aux
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+/An Enhanced Mamba-UNet with Wavelet-Domain Multi-scale Physical Priors for Seismic Fault Detection/
+/Reply.txt
+/.tex_audit_tmp/
+/tmp/
+/docs/superpowers/
+
+# Local manuscript/review helper scripts
+/scripts/add_cig_public_curve_to_original_fig12.py
+/scripts/reviewer1_phase2_queue.sh
 
 # ========================
 # Logs

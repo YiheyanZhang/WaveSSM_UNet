@@ -654,12 +654,14 @@ def compute_loss(outputs, labels, args, inputs=None):
             criterion = DiceLoss().to(args.device)
             loss_dice = criterion(pred.unsqueeze(1), target)
 
-            # 加权Focal Loss（动态alpha + gamma=2.0）
-            focal_criterion = WeightedFocalLoss(gamma=3, dynamic_alpha=True)
+            # 论文设置：alpha=0.75, gamma=2.0
+            focal_criterion = WeightedFocalLoss(alpha=0.75, gamma=2.0, dynamic_alpha=False)
             loss_focal = focal_criterion(pred, target)
 
-            # 权重：BCE=0.0, Dice=0.7, Focal=0.3
-            return 0.0 * loss_bce + 0.7 * loss_dice + 0.3 * loss_focal
+            # 权重：BCE=0.0，Dice/Focal 可通过命令行参数进行敏感性实验
+            lambda_dice = getattr(args, 'lambda_dice', 0.7)
+            lambda_focal = getattr(args, 'lambda_focal', 0.3)
+            return 0.0 * loss_bce + lambda_dice * loss_dice + lambda_focal * loss_focal
 
         elif args.loss_func == 'cross+dice':
             # 兼容旧配置
@@ -703,10 +705,9 @@ def compute_loss(outputs, labels, args, inputs=None):
     if boundary_outputs is not None:
         from models.MSM_UNet import BADH
         boundary_target = BADH.compute_boundary_target(labels)
-        boundary_criterion = BoundaryLoss().to(args.device)
-        boundary_loss = boundary_criterion(boundary_outputs, boundary_target)
+        boundary_loss = F.l1_loss(torch.sigmoid(boundary_outputs), boundary_target)
         boundary_weight = getattr(args, 'boundary_loss_weight', 0.3)
-        total_loss = total_loss + 0.0 * boundary_loss
+        total_loss = total_loss + boundary_weight * boundary_loss
 
     return total_loss
 

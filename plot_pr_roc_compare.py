@@ -9,7 +9,7 @@
         --out_dir EXP/wavessm_fast_r0.25_v2/figures/curves_vs_swin
 
 每个 --models 条目格式：  "显示名:model_type:权重路径"
-    model_type 取值: msm_unet / FAULTSEG3D / RESUNET / SWINUNETR / RESACEUNET
+    model_type 取值: msm_unet / FAULTSEG3D / RESUNET / SWINUNETR / RESACEUNET / CIG_BENCH
     显示名会出现在图例里（如 "Ours" / "SwinUNETR"）
 
 输出: out_dir 下生成
@@ -20,6 +20,8 @@
 
 import os
 import argparse
+import sys
+from pathlib import Path
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -31,6 +33,7 @@ from sklearn.metrics import precision_recall_curve, roc_curve, auc, average_prec
 
 from dataloader.dataloader import FaultDataset
 from models.MSM_UNet import MSM_UNet
+from utils.segmentation_metrics import confusion_metrics
 
 
 # 给前 8 个模型预备一组好看的颜色（与 train.py 风格一致）
@@ -70,6 +73,10 @@ def build_one_model(model_type, in_channels, out_channels, device):
     if model_type == 'FAULTSEG3D':
         from models.faultseg3d import FaultSeg3D
         return FaultSeg3D(in_channels, out_channels).to(device)
+    if model_type == 'CIG_BENCH':
+        sys.path.insert(0, str(Path(__file__).resolve().parent / 'third_party' / 'CIG-bench'))
+        from cig_bench.networks.hrnet_skipconect_opt import HRNet
+        return HRNet(c=32).to(device)
     # 其余走 compare_models/build.py
     from compare_models.build import build_model
     cfg = type('obj', (object,), {
@@ -84,8 +91,13 @@ def build_one_model(model_type, in_channels, out_channels, device):
     return build_model(cfg).to(device)
 
 
-def load_weights(model, weight_path, device):
+def load_weights(model, weight_path, device, model_type):
+    if model_type == 'CIG_BENCH' and weight_path == 'public':
+        from cig_bench.predictor import ensure_weight
+        weight_path = ensure_weight('fault')
     sd = torch.load(weight_path, map_location=device)
+    if 'model' in sd and isinstance(sd['model'], dict):
+        sd = sd['model']
     new_sd = {(k.replace('module.', '') if k.startswith('module.') else k): v
               for k, v in sd.items()}
     model.load_state_dict(new_sd)
@@ -101,7 +113,12 @@ def infer_one_model(model, model_type, val_loader, device, name):
         for data in tqdm(val_loader, desc=f'[{name}] infer'):
             x = data['x'].to(device)
             y = data['y'].numpy()
-            out = model(x)
+            if model_type == 'CIG_BENCH':
+                from cig_bench.predictor.utils import tensor_z_score_clip
+                x = tensor_z_score_clip(x, clp_s=3.0) * 2 - 1
+                out = torch.sigmoid(model(x, rank=4, chunk_size=64))
+            else:
+                out = model(x)
             seg = out[0] if isinstance(out, tuple) else out
             preds.append(seg.detach().cpu().numpy())
             gts.append(y)
@@ -135,11 +152,11 @@ def main():
     all_results = []   # list of (name, preds_flat)
     gt_flat = None
     for name, mtype, path in specs:
-        if not os.path.exists(path):
+        if path != 'public' and not os.path.exists(path):
             raise FileNotFoundError(f'权重不存在: {path}')
         print(f'\n[Model] {name} | type={mtype} | path={path}')
         model = build_one_model(mtype, args.in_channels, args.out_channels, device)
-        model = load_weights(model, path, device)
+        model = load_weights(model, path, device, mtype)
         preds, gts = infer_one_model(model, mtype, val_loader, device, name)
         if gt_flat is None:
             gt_flat = (gts > 0.5).astype(np.float32)
@@ -166,18 +183,25 @@ def main():
 
     # 计算各模型指标
     metrics = []
-    for i, (name, preds) in enumerate(sampled):
+    for i, ((name, preds), (_, full_preds)) in enumerate(zip(sampled, all_results)):
         precision, recall, _ = precision_recall_curve(gt_sample, preds)
         ap = average_precision_score(gt_sample, preds)
         f1 = 2 * precision * recall / (precision + recall + 1e-8)
         best_f1 = float(np.max(f1))
         fpr, tpr, _ = roc_curve(gt_sample, preds)
         roc_auc = float(auc(fpr, tpr))
+        binary = full_preds > 0.5
+        truth = gt_flat > 0.5
+        fixed = confusion_metrics([
+            np.sum(~binary & ~truth), np.sum(binary & ~truth),
+            np.sum(~binary & truth), np.sum(binary & truth),
+        ])
         color = DEFAULT_COLORS[i % len(DEFAULT_COLORS)]
         metrics.append({
             'name': name, 'color': color,
             'precision': precision, 'recall': recall, 'ap': ap, 'best_f1': best_f1,
             'fpr': fpr, 'tpr': tpr, 'roc_auc': roc_auc,
+            'miou': fixed['miou'], 'dice': fixed['dice'],
         })
 
     # ============== PR 曲线 ==============
@@ -221,15 +245,17 @@ def main():
     with open(txt_path, 'w') as f:
         f.write(f'Validation samples : {len(val_ds)}\n')
         f.write(f'Voxels used        : {gt_sample.shape[0]}\n\n')
-        f.write(f"{'Model':<24}{'AP':>10}{'AUC':>10}{'Best F1':>10}\n")
-        f.write('-' * 54 + '\n')
+        f.write(f"{'Model':<24}{'mIoU':>10}{'Dice':>10}{'F1':>10}{'ROC-AUC':>10}{'PR-AUC':>10}\n")
+        f.write('-' * 74 + '\n')
         for m in metrics:
-            f.write(f"{m['name']:<24}{m['ap']:>10.4f}{m['roc_auc']:>10.4f}{m['best_f1']:>10.4f}\n")
+            f.write(f"{m['name']:<24}{m['miou']:>10.4f}{m['dice']:>10.4f}"
+                    f"{m['best_f1']:>10.4f}{m['roc_auc']:>10.4f}{m['ap']:>10.4f}\n")
     print(f'[Save] {txt_path}')
 
     print('\n=== Summary ===')
     for m in metrics:
-        print(f"  {m['name']:<20} AP={m['ap']:.4f}  AUC={m['roc_auc']:.4f}  F1={m['best_f1']:.4f}")
+        print(f"  {m['name']:<20} mIoU={m['miou']:.4f} Dice={m['dice']:.4f} "
+              f"F1={m['best_f1']:.4f} AUC={m['roc_auc']:.4f} AP={m['ap']:.4f}")
 
 
 if __name__ == '__main__':

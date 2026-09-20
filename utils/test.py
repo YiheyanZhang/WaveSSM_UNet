@@ -253,7 +253,10 @@ def pred_Gaussian(args):
 
     # 使用训练好的模型进行预测
     if args.model_type == 'msm_unet':
-        model = MSM_UNet(args.in_channels, args.out_channels).to(args.device)
+        model = MSM_UNet(
+            args.in_channels, args.out_channels,
+            upsample_mode=getattr(args, 'upsample_mode', 'lossless')
+        ).to(args.device)
     else:
         # 使用compare_models中的对比模型
         from compare_models.build import build_model
@@ -339,7 +342,10 @@ def pred_thebe(args):
 
     # ====== 加载模型 ======
     if args.model_type == 'msm_unet':
-        model = MSM_UNet(args.in_channels, args.out_channels).to(device)
+        model = MSM_UNet(
+            args.in_channels, args.out_channels,
+            upsample_mode=getattr(args, 'upsample_mode', 'lossless')
+        ).to(device)
     elif args.model_type == 'FAULTSEG3D':
         model = FaultSeg3D(args.in_channels, args.out_channels).to(device)
     else:
