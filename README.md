@@ -18,7 +18,7 @@ Seismic fault detection supports subsurface interpretation by locating discontin
 
 WaveSSM (Wavelet State Space Model) combines three components:
 
-1. **Wavelet-domain seismic-attribute priors.** CWT-derived amplitude gradient, local incoherence, and local variance are computed at five scales. Together with the original input, they form a 16-channel representation. In this repository, "prior" refers to geophysically meaningful attribute information rather than a constraint derived from the wave equation.
+1. **Wavelet-domain seismic-attribute priors.** CWT-derived amplitude gradient, local incoherence, and local variance are computed at scales `[2, 3, 4, 6, 8]`. The local statistics use a `k x k` lateral window, with `k=5` in the reported experiments. Together with the original input, they form a 16-channel representation. In this repository, "prior" refers to geophysically meaningful attribute information rather than a constraint derived from the wave equation.
 
 2. **Mamba-based long-range modeling.** A Mamba state-space module aggregates global context with linear asymptotic sequence complexity. Measured runtime still depends on the implementation, kernels, and hardware.
 
@@ -36,7 +36,7 @@ WaveSSM-UNet uses a U-shaped encoder-decoder with three component groups:
 
 | Component | Description |
 |-----------|-------------|
-| **Wavelet-Domain Attribute Extraction** | CWT-based front-end that computes five-scale amplitude-derived attributes and forms a 16-channel input. |
+| **Wavelet-Domain Attribute Extraction** | CWT-based front-end that computes amplitude-derived attributes at scales `[2, 3, 4, 6, 8]` and forms a 16-channel input. The local statistics use a `k x k` lateral window, with `k=5` in the reported experiments. |
 | **Mamba-Enhanced U-Net** | Encoder with `ResidualDeformConv` blocks and `WaveletFusion` modules; Bottleneck centered around `FaultOrientedMamba` for tri-directional bidirectional scanning; Decoder with `LosslessUp` (pixel-shuffle) upsampling, `FDEM` (Fault Detail Enhancement Module), `SFAM` (`SeismicFaultCBAM` in the implementation), and `MambaSkip` connections. |
 | **Boundary-Aware Decoupled Head (BADH)** | Splits prediction into a region branch and a boundary branch, supervised by Dice, Focal, and a dedicated boundary loss term. |
 
@@ -152,7 +152,7 @@ Key training arguments:
 ### Released pretrained checkpoint
 
 The released WaveSSM-UNet checkpoint is included at
-[`checkpoints/WaveSSM_UNet_BEST.pth`](https://github.com/YiheyanZhang/WaveSSM_UNet/blob/main/checkpoints/WaveSSM_UNet_BEST.pth).
+[`checkpoints/WaveSSM_UNet_BEST.pth`](checkpoints/WaveSSM_UNet_BEST.pth).
 The training code keeps the historical `MSM_UNet_BEST.pth` name for newly
 created experiment directories; the released file uses the WaveSSM-specific
 name to avoid confusion with the baseline models.
@@ -229,13 +229,13 @@ Use `--train_ratio` and `--split_seed` for data efficiency ablation studies:
 python main.py --mode train --train_ratio 0.25 --split_seed 42 ...
 ```
 
-The CIG-Bench comparison uses the public `cig-bench==0.2.0` package. Installation, training, evaluation, and field-data inference commands are documented in [`docs/AUTODL_CIG_BENCH.md`](docs/AUTODL_CIG_BENCH.md).
+The CIG-Bench comparison uses the public `cig-bench==0.2.0` package and its released fault-segmentation checkpoint, which was pretrained on the CIG-Bench synthetic data. We evaluated the checkpoint without fine-tuning. Installation, training, evaluation, and field-data inference commands are documented in [`docs/AUTODL_CIG_BENCH.md`](docs/AUTODL_CIG_BENCH.md).
 
 ## Datasets
 
 ### Download
 
-The training, validation, and field-data inputs are available through Baidu Wangpan:
+The expected data directories are:
 
 | Contents | Samples | Directory |
 |----------|---------|-----------|
@@ -244,9 +244,11 @@ The training, validation, and field-data inputs are available through Baidu Wang
 | F3 real seismic data | N/A | `prediction/f3/` |
 | Kerry3D real seismic data | N/A | `prediction/kerry3d/` |
 
-> **Download link**: [Baidu Wangpan](https://pan.baidu.com/s/15m7RWQxu86C6Ej3-9RSUoQ), extraction code: `ju47`
->
-> 220 samples total (train + validation). F3 and Kerry3D prediction data are in the `prediction/` subdirectory.
+The author-hosted download link is withheld during double-blind review. The code
+archive does not include the data. Public field-data sources are listed below.
+
+There are 220 synthetic samples in total (training + validation). F3 and Kerry3D
+prediction data are in the `prediction/` subdirectory.
 
 ### Original sources for field data
 
@@ -272,7 +274,8 @@ The table reports results from the full synthetic-data experiment:
 | FaultSeg3D | N/A | 0.7775 | 0.8624 | 0.7462 | 0.9773 | 0.7877 |
 | ResUNet | N/A | 0.7988 | 0.8796 | 0.7805 | 0.9727 | 0.8395 |
 | SwinUNETR | 62.19 M | 0.8438 | 0.9094 | 0.8313 | 0.9878 | 0.8957 |
-| **WaveSSM-UNet (Ours)** | **3.33 M** | **0.8607** | **0.9203** | **0.8517** | **0.9924** | **0.9107** |
+| CIG-Bench (public) | N/A | 0.8452 | 0.9107 | **0.8552** | 0.9738 | 0.7819 |
+| **WaveSSM-UNet (Ours)** | **3.33 M** | **0.8607** | **0.9203** | 0.8517 | **0.9924** | **0.9107** |
 
 <p align="center">
   <img src="docs/PR_comparison.png" alt="PR Curves" width="45%">
@@ -318,15 +321,15 @@ The models were trained on synthetic data and applied to the F3 volume without f
 
 Ablation experiments assess the contribution of the main component groups:
 
-| Configuration | Effect |
+| Configuration | Observed result |
 |---------------|--------|
-| w/o Wavelet Priors | Degraded generalization, increased noise sensitivity |
-| w/o FaultOrientedMamba | Reduced fault continuity, fragmented predictions |
-| w/o MambaSkip | Loss of fine structural detail in decoder |
-| w/o Boundary Loss | Blurred fault edges, reduced boundary sharpness |
+| w/o Wavelet Attributes | Synthetic validation metrics increased in this controlled run; field-data differences are assessed qualitatively. |
+| w/o FaultOrientedMamba | mIoU, Dice, and F1 decreased in the controlled ablation run. |
+| w/o MambaSkip | The principal overlap metrics changed only slightly. |
+| w/o Boundary Loss | mIoU, Dice, and F1 decreased, while the AUC metrics changed slightly in the opposite direction. |
 
 <p align="center">
-  <em>Ablation study on the F3 dataset. Removing a main component group degrades the corresponding continuity or boundary quality. The full model (rightmost) combines all groups.</em><br>
+  <em>Qualitative comparison of the ablation variants on the F3 field dataset. The figure shows differences in predicted continuity and response density; it does not provide quantitative field-data accuracy.</em><br>
   <img src="docs/ablation_comparison.png" alt="Ablation Study" width="100%">
 </p>
 
@@ -371,18 +374,7 @@ WaveSSM/
 
 ## Citation
 
-If you use WaveSSM in your research, please cite our work:
-
-```bibtex
-@article{zhang2026wavessm,
-  title   = {An Enhanced Mamba-UNet with Wavelet-Domain Multi-scale Physical
-             Priors for Seismic Fault Detection},
-  author  = {Yiheyan Zhang and Yajun Tian and Jinghuai Gao},
-  journal = {Geophysics},
-  year    = {2026},
-  note    = {Under review}
-}
-```
+Author details and the citation are withheld during double-blind review.
 
 ## Attribution
 
@@ -408,4 +400,4 @@ This project is released under the **MIT License**. See [LICENSE](./LICENSE) for
 
 ## Contact
 
-For questions, please open an issue on this repository or contact the corresponding author.
+For questions during peer review, please contact the handling editor.
